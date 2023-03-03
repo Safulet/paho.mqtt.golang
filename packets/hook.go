@@ -23,7 +23,9 @@ type eventObserver struct {
 func (rph *eventObserver) OnReadNewPacket(startTime, endTime time.Time, cp ControlPacket) {
 	switch m := cp.(type) {
 	case *PublishPacket:
-		rph.hook.OnReadPublishPacket(startTime, endTime, m)
+		if rph.hook != nil {
+			rph.hook.OnReadPublishPacket(startTime, endTime, m)
+		}
 
 	case *PingrespPacket:
 	case *SubackPacket:
