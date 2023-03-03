@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"time"
 )
 
 // ControlPacket defines the interface for structs intended to hold
@@ -143,8 +144,14 @@ func ReadPacket(r io.Reader) (ControlPacket, error) {
 		return nil, err
 	}
 
+	readPacketBodyStart := time.Now()
+
 	packetBytes := make([]byte, fh.RemainingLength)
 	n, err := io.ReadFull(r, packetBytes)
+
+	readPacketBodyEnd := time.Now()
+
+
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +160,13 @@ func ReadPacket(r io.Reader) (ControlPacket, error) {
 	}
 
 	err = cp.Unpack(bytes.NewBuffer(packetBytes))
-	return cp, err
+	if err != nil {
+		return nil, err
+	}
+
+	internalReadPacketHook.OnReadNewPacket(readPacketBodyStart, readPacketBodyEnd, cp)
+
+	return cp, nil
 }
 
 // NewControlPacket is used to create a new ControlPacket of the type specified
