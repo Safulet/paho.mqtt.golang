@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"time"
 )
 
 // PublishPacket is an internal representation of the fields of the
@@ -47,7 +48,10 @@ func (p *PublishPacket) Write(w io.Writer) error {
 	packet := p.FixedHeader.pack()
 	packet.Write(body.Bytes())
 	packet.Write(p.Payload)
+
+	start := time.Now()
 	_, err = w.Write(packet.Bytes())
+	internalOb.OnWritePacket(start, time.Now(), p)
 
 	return err
 }

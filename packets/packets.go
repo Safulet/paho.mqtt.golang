@@ -164,7 +164,7 @@ func ReadPacket(r io.Reader) (ControlPacket, error) {
 		return nil, err
 	}
 
-	internalReadPacketHook.OnReadNewPacket(readPacketBodyStart, readPacketBodyEnd, cp)
+	internalOb.OnReadPacket(readPacketBodyStart, readPacketBodyEnd, cp)
 
 	return cp, nil
 }
