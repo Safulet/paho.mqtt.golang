@@ -7,14 +7,16 @@ import (
 type Observer interface {
 	OnWritePublishPacket(start, end time.Time, p *PublishPacket)
 	OnReadPublishPacket(start, end time.Time, p *PublishPacket)
+
+	OnPacketStage(startNs, endNs int64, stage string, p *PublishPacket)
 }
 
 func SetObserver(h Observer) {
-	internalOb.ob = h
+	InternalOb.ob = h
 }
 
 var (
-	internalOb = &eventObserver{}
+	InternalOb = &eventObserver{}
 )
 
 type eventObserver struct {
@@ -44,6 +46,24 @@ func (rph *eventObserver) OnReadPacket(start, end time.Time, cp ControlPacket) {
 	case *PublishPacket:
 		if rph.ob != nil {
 			rph.ob.OnReadPublishPacket(start, end, m)
+		}
+
+	case *PingrespPacket:
+	case *SubackPacket:
+	case *UnsubackPacket:
+	case *PubackPacket:
+	case *PubrecPacket:
+	case *PubrelPacket:
+	case *PubcompPacket:
+		//ignore
+	}
+}
+
+func (rph *eventObserver) OnPacketStage(startNs, endNs int64, stage string, cp ControlPacket) {
+	switch m := cp.(type) {
+	case *PublishPacket:
+		if rph.ob != nil {
+			rph.ob.OnPacketStage(startNs, endNs, stage, m)
 		}
 
 	case *PingrespPacket:

@@ -51,7 +51,7 @@ func (p *PublishPacket) Write(w io.Writer) error {
 
 	start := time.Now()
 	_, err = w.Write(packet.Bytes())
-	internalOb.OnWritePacket(start, time.Now(), p)
+	InternalOb.OnWritePacket(start, time.Now(), p)
 
 	return err
 }

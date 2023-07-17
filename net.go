@@ -281,6 +281,12 @@ func startOutgoingComms(conn net.Conn,
 					continue
 				}
 				msg := pub.p.(*packets.PublishPacket)
+				go func() {
+					pkCreateTimeNs := packets.FetchCreateTimeNs(msg.Payload)
+					if pkCreateTimeNs > 0 {
+						packets.InternalOb.OnPacketStage(pkCreateTimeNs, time.Now().UnixNano(), "client_outbound_channel", pub.p)
+					}
+				}()
 				DEBUG.Println(NET, "obound msg to write", msg.MessageID)
 
 				writeTimeout := c.getWriteTimeOut()

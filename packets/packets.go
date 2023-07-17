@@ -19,6 +19,7 @@ package packets
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -151,7 +152,6 @@ func ReadPacket(r io.Reader) (ControlPacket, error) {
 
 	readPacketBodyEnd := time.Now()
 
-
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +164,16 @@ func ReadPacket(r io.Reader) (ControlPacket, error) {
 		return nil, err
 	}
 
-	internalOb.OnReadPacket(readPacketBodyStart, readPacketBodyEnd, cp)
+	go func() {
+		if p, ok := cp.(*PublishPacket); ok {
+			pkCreateTimeNs := FetchCreateTimeNs(p.Payload)
+			if pkCreateTimeNs > 0 {
+				InternalOb.OnPacketStage(pkCreateTimeNs, time.Now().UnixNano(), "client_receive_packet", cp)
+			}
+		}
+	}()
+
+	InternalOb.OnReadPacket(readPacketBodyStart, readPacketBodyEnd, cp)
 
 	return cp, nil
 }
@@ -382,4 +391,18 @@ func decodeLength(r io.Reader) (int, error) {
 		multiplier += 7
 	}
 	return int(rLength), nil
+}
+
+type SimplePacketTimeWrapper struct {
+	CreateTimeNs int64 `json:"create_time_ns"`
+}
+
+func FetchCreateTimeNs(payload []byte) int64 {
+	pkSimpleTimeWrapper := new(SimplePacketTimeWrapper)
+	err := json.Unmarshal(payload, pkSimpleTimeWrapper)
+	if err != nil {
+		return -1
+	}
+
+	return pkSimpleTimeWrapper.CreateTimeNs
 }
